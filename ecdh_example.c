@@ -23,10 +23,10 @@
 
 */
 
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
+//#include <// assert.h>
+//#include <stdio.h>
+//#include <stdlib.h>
+//#include <time.h>
 #include "ecdh.h"
 
 
@@ -34,22 +34,22 @@
 /* pseudo random number generator with 128 bit internal state... probably not suited for cryptographical usage */
 typedef struct
 {
-  uint32_t a;
-  uint32_t b;
-  uint32_t c;
-  uint32_t d;
+  u32 a;
+  u32 b;
+  u32 c;
+  u32 d;
 } prng_t;
 
 static prng_t prng_ctx;
 
-static uint32_t prng_rotate(uint32_t x, uint32_t k)
+static u32 prng_rotate(u32 x, u32 k)
 {
   return (x << k) | (x >> (32 - k)); 
 }
 
-static uint32_t prng_next(void)
+static u32 prng_next(void)
 {
-  uint32_t e = prng_ctx.a - prng_rotate(prng_ctx.b, 27); 
+  u32 e = prng_ctx.a - prng_rotate(prng_ctx.b, 27); 
   prng_ctx.a = prng_ctx.b ^ prng_rotate(prng_ctx.c, 17); 
   prng_ctx.b = prng_ctx.c + prng_ctx.d;
   prng_ctx.c = prng_ctx.d + e; 
@@ -57,9 +57,9 @@ static uint32_t prng_next(void)
   return prng_ctx.d;
 }
 
-static void prng_init(uint32_t seed)
+static void prng_init(u32 seed)
 {
-  uint32_t i;
+  u32 i;
   prng_ctx.a = 0xf1ea5eed;
   prng_ctx.b = prng_ctx.c = prng_ctx.d = seed;
 
@@ -73,15 +73,15 @@ static void prng_init(uint32_t seed)
 
 
 
-static void ecdh_demo(void)
+static int ecdh_demo(void)
 {
-  static uint8_t puba[ECC_PUB_KEY_SIZE];
-  static uint8_t prva[ECC_PRV_KEY_SIZE];
-  static uint8_t seca[ECC_PUB_KEY_SIZE];
-  static uint8_t pubb[ECC_PUB_KEY_SIZE];
-  static uint8_t prvb[ECC_PRV_KEY_SIZE];
-  static uint8_t secb[ECC_PUB_KEY_SIZE];
-  uint32_t i;
+  static u8 puba[ECC_PUB_KEY_SIZE];
+  static u8 prva[ECC_PRV_KEY_SIZE];
+  static u8 seca[ECC_PUB_KEY_SIZE];
+  static u8 pubb[ECC_PUB_KEY_SIZE];
+  static u8 prvb[ECC_PRV_KEY_SIZE];
+  static u8 secb[ECC_PUB_KEY_SIZE];
+  u32 i;
 
   /* 0. Initialize and seed random number generator */
   static int initialized = 0;
@@ -94,70 +94,101 @@ static void ecdh_demo(void)
   /* 1. Alice picks a (secret) random natural number 'a', calculates P = a * g and sends P to Bob. */
   for (i = 0; i < ECC_PRV_KEY_SIZE; ++i)
   {
-    prva[i] = prng_next();
+    prva[i] = prng_next() ;
   }
-  assert(ecdh_generate_keys(puba, prva));
+  // assert(
+  ecdh_generate_keys(puba, prva);
+    //);
 
   /* 2. Bob picks a (secret) random natural number 'b', calculates Q = b * g and sends Q to Alice. */
   for (i = 0; i < ECC_PRV_KEY_SIZE; ++i)
   {
     prvb[i] = prng_next();
   }
-  assert(ecdh_generate_keys(pubb, prvb));
+  // assert(
+  ecdh_generate_keys(pubb, prvb);
+    //);
 
   /* 3. Alice calculates S = a * Q = a * (b * g). */
-  assert(ecdh_shared_secret(prva, pubb, seca));
+  // assert(
+  ecdh_shared_secret(prva, pubb, seca);
+  //);
 
   /* 4. Bob calculates T = b * P = b * (a * g). */
-  assert(ecdh_shared_secret(prvb, puba, secb));
-
+  // assert(
+  ecdh_shared_secret(prvb, puba, secb);
+  //);
+int k=0;
   /* 5. Assert equality, i.e. check that both parties calculated the same value. */
   for (i = 0; i < ECC_PUB_KEY_SIZE; ++i)
   {
-    assert(seca[i] == secb[i]);
+    // assert(seca[i] == secb[i]);
+    if(seca[i] != secb[i]){ k=1; };
   }
+  return k;
 }
 
 
 /* WARNING: This is not working correctly. ECDSA is not working... */
 void ecdsa_broken()
 {
-  static uint8_t  prv[ECC_PRV_KEY_SIZE];
-  static uint8_t  pub[ECC_PUB_KEY_SIZE];
-  static uint8_t  msg[ECC_PRV_KEY_SIZE];
-  static uint8_t  signature[ECC_PUB_KEY_SIZE];
-  static uint8_t  k[ECC_PRV_KEY_SIZE];
-  uint32_t i;
+  static u8   prv[ECC_PRV_KEY_SIZE];
+  static u32  pub[ECC_PUB_KEY_SIZE/4];
+  static u8   msg[ECC_PRV_KEY_SIZE];
+  static u32  signature[ECC_PUB_KEY_SIZE/4];
+  static u8  k[ECC_PRV_KEY_SIZE];
+  u32 i;
 
-  srand(time(0));
-  srand(42);
+  //srand(time(0));
+  //srand(42);  
 
-  for (i = 0; i < ECC_PRV_KEY_SIZE; ++i)
+  for (i = 0; i < ((CURVE_DEGREE/8)); ++i)
   {
-    prv[i] = rand();
-    msg[i] = prv[i] ^ rand();
-    k[i] = rand();
+        prv[i] = Random();
+        msg[i] = prv[i] ^ Random();
+        k[i] =   Random();
   }
 
-/* int ecdsa_sign(const uint8_t* private, const uint8_t* hash, uint8_t* random_k, uint8_t* signature);
-   int ecdsa_verify(const uint8_t* public, const uint8_t* hash, uint8_t* signature);                          */
+ 
+//prv[0] =0x12345678; prv[1] =0xffffffff; prv[2] =0xffffffff; prv[3] =0x12345678; prv[4] =0x12345678;prv[5] =0x1;
+//msg[0] =0x12345678; msg[1] =0x12345678; msg[2] =0x12345678; msg[3] =0x12345678; msg[4] =0x12345678;  msg[5] =0;
+//k[0]   =0x12345678; k[1] =0x12345678; k[2] =0x12345678; k[3] =0x12345678; k[4] =0x12345678;  k[5] =0;
+  
+/* int ecdsa_sign(const u8* private, const u8* hash, u8* random_k, u8* signature);
+   int ecdsa_verify(const u8* public, const u8* hash, u8* signature);                          */
+start_timer();
+  ecdh_generate_keys((u8*)pub, (u8*)prv);
+ stop_timer(); 
+ int kk=gf2point_on_curve((u32*)pub, (u32*)(pub + 6));
 
-  ecdh_generate_keys(pub, prv);
-  /* No asserts - ECDSA functionality is broken... */
-  ecdsa_sign((const uint8_t*)prv, msg, k, signature);
-  ecdsa_verify((const uint8_t*)pub, msg, (const uint8_t*)signature); /* fails... */
+ /* No asserts - ECDSA functionality is broken... */
+  ecdsa_sign((u32*)prv, (u32*)msg, (u32*)k, signature);
+  ecdsa_verify(pub, (u32*)msg,  signature, (u32*)prv); /* fails... */
 }
 
 
+void chtest()
+  {
+   // ecdh_demo();
 
-int main(int argc, char* argv[])
+    
+    
+  //  start_timer();
+    ecdsa_broken();
+    ecdh_demo();
+  //  stop_timer();
+        
+
+  }
+
+int main_l(int argc, char* argv[])
 {
   int i;
   int ncycles = 1;
 
   if (argc > 1)
   {
-    ncycles = atoi(argv[1]);
+   // ncycles = atoi(argv[1]);
   }
 
   for (i = 0; i < ncycles; ++i)
