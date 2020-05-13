@@ -23,11 +23,7 @@
 
 */
 
-//#include <// assert.h>
-//#include <stdio.h>
-//#include <stdlib.h>
-//#include <time.h>
-#include "ecdh.h"
+#include "ecdx.h"
 
 
 
@@ -129,7 +125,6 @@ int k=0;
 }
 
 
-/* WARNING: This is not working correctly. ECDSA is not working... */
 void ecdsa_broken()
 {
   static u8   prv[ECC_PRV_KEY_SIZE];
@@ -139,29 +134,28 @@ void ecdsa_broken()
   static u8  k[ECC_PRV_KEY_SIZE];
   u32 i;
 
-  //srand(time(0));
-  //srand(42);  
-
-  for (i = 0; i < ((CURVE_DEGREE/8)); ++i)
+  static int initialized = 0;
+  if (!initialized)
   {
-        prv[i] = Random();
-        msg[i] = prv[i] ^ Random();
-        k[i] =   Random();
+    prng_init((0xbad ^ 0xc0ffee ^ 42) | 0xcafebabe | 666);
+    initialized = 1;
   }
 
- 
-//prv[0] =0x12345678; prv[1] =0xffffffff; prv[2] =0xffffffff; prv[3] =0x12345678; prv[4] =0x12345678;prv[5] =0x1;
-//msg[0] =0x12345678; msg[1] =0x12345678; msg[2] =0x12345678; msg[3] =0x12345678; msg[4] =0x12345678;  msg[5] =0;
-//k[0]   =0x12345678; k[1] =0x12345678; k[2] =0x12345678; k[3] =0x12345678; k[4] =0x12345678;  k[5] =0;
   
+  
+  for (i = 0; i < ((CURVE_DEGREE/8)); ++i)
+  {
+        prv[i] = prng_next() ;
+        msg[i] = prv[i] ^ prng_next() ;
+        k[i] =   prng_next() ;
+  }
+ 
 /* int ecdsa_sign(const u8* private, const u8* hash, u8* random_k, u8* signature);
    int ecdsa_verify(const u8* public, const u8* hash, u8* signature);                          */
-start_timer();
+  //start_timer();
   ecdh_generate_keys((u8*)pub, (u8*)prv);
- stop_timer(); 
- int kk=gf2point_on_curve((u32*)pub, (u32*)(pub + 6));
+  //stop_timer(); 
 
- /* No asserts - ECDSA functionality is broken... */
   ecdsa_sign((u32*)prv, (u32*)msg, (u32*)k, signature);
   ecdsa_verify(pub, (u32*)msg,  signature, (u32*)prv); /* fails... */
 }
@@ -169,16 +163,8 @@ start_timer();
 
 void chtest()
   {
-   // ecdh_demo();
-
-    
-    
-  //  start_timer();
     ecdsa_broken();
-    ecdh_demo();
-  //  stop_timer();
-        
-
+    ecdh_demo();       
   }
 
 int main_l(int argc, char* argv[])
